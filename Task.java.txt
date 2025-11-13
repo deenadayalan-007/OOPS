@@ -1,0 +1,102 @@
+package projecttracker;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.*;
+
+public class ProjectTrackerUI extends JFrame {
+    private TaskManager manager;
+    private JTextField taskNameField, deadlineField;
+    private JComboBox<String> statusBox;
+    private DefaultTableModel tableModel;
+
+    public ProjectTrackerUI() {
+        manager = new TaskManager();
+        setTitle("Project Tracker");
+        setSize(600, 400);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        // Top panel for input
+        JPanel inputPanel = new JPanel(new GridLayout(2, 4, 10, 10));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Add New Task"));
+
+        taskNameField = new JTextField();
+        deadlineField = new JTextField();
+        statusBox = new JComboBox<>(new String[]{"To-Do", "In Progress", "Done"});
+        JButton addButton = new JButton("Add Task");
+
+        inputPanel.add(new JLabel("Task Name:"));
+        inputPanel.add(taskNameField);
+        inputPanel.add(new JLabel("Deadline:"));
+        inputPanel.add(deadlineField);
+        inputPanel.add(new JLabel("Status:"));
+        inputPanel.add(statusBox);
+        inputPanel.add(new JLabel(""));
+        inputPanel.add(addButton);
+
+        add(inputPanel, BorderLayout.NORTH);
+
+        // Table setup
+        String[] columns = {"Task Name", "Deadline", "Status"};
+        tableModel = new DefaultTableModel(columns, 0);
+        JTable table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Button to update status
+        JButton updateButton = new JButton("Update Status");
+        add(updateButton, BorderLayout.SOUTH);
+
+        // Add Task button action
+        addButton.addActionListener(e -> {
+            String name = taskNameField.getText().trim();
+            String deadline = deadlineField.getText().trim();
+            String status = (String) statusBox.getSelectedItem();
+
+            if (name.isEmpty() || deadline.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter task name and deadline.");
+                return;
+            }
+
+            Task task = new Task(name, deadline, status);
+            manager.addTask(task);
+            tableModel.addRow(new Object[]{name, deadline, status});
+
+            taskNameField.setText("");
+            deadlineField.setText("");
+        });
+
+        // Update Status button action
+        updateButton.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(this, "Please select a task to update.");
+                return;
+            }
+
+            String newStatus = (String) JOptionPane.showInputDialog(
+                    this,
+                    "Select new status:",
+                    "Update Status",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    new String[]{"To-Do", "In Progress", "Done"},
+                    tableModel.getValueAt(selectedRow, 2)
+            );
+
+            if (newStatus != null) {
+                tableModel.setValueAt(newStatus, selectedRow, 2);
+                manager.getTasks().get(selectedRow).setStatus(newStatus);
+            }
+        });
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new ProjectTrackerUI().setVisible(true);
+        });
+    }
+}
